@@ -1,0 +1,4 @@
+tabulate
+pandas
+seaborn==0.12.2
+scikit-learn==1.3.0
