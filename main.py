@@ -7,10 +7,12 @@ from typing import List
 from sklearn.metrics import roc_auc_score, RocCurveDisplay, confusion_matrix
 import numpy as np
 import pandas as pd
+import codecs
 
 def filter_scores(text: str) -> List[float]:
     # search for all occurances of "X-Spam-Score: {float}\n" in each text file using regex
-    pattern = r"X-Spam-Score:\s+(\d+\.\d+)\n"
+    # pattern = r"X-Spam-Score:\s+(\d+\.\d+)\n"
+    pattern = r"X-Spam-Score:\s+(-?\d+\.\d+)\n"
     # Find all matches of the pattern in the string
     matches = re.findall(pattern, text)
     # Convert the matched strings to float values
@@ -22,10 +24,10 @@ def main(args):
     # create output directory if it doesn't exist
     os.makedirs(args.output, exist_ok=True)
     # load text file from from args.clean path
-    with open(args.clean, 'r') as f:
+    with codecs.open(args.clean, 'r', encoding="utf-8", errors="ignore") as f:
         clean_mail_txt = f.read()
     # load text file from from args.spam path
-    with open(args.spam, 'r') as f:
+    with codecs.open(args.spam, "r", encoding="utf-8", errors="ignore") as f:
         spam_mail_txt = f.read()
 
     # filter scores from text files
@@ -50,6 +52,21 @@ def main(args):
     plt.title("Spam score distribution")
     plt.savefig(os.path.join(args.output, "kde.png"))
 
+    # plot wide histogram of scores
+    plt.clf()
+    sns.set_theme(style="whitegrid")
+    plt.figure(figsize=(20, 6))
+    sns.histplot(data=scores, x="Score", hue="Email", palette="crest", bins=50, alpha=.5, linewidth=0)
+    plt.xlabel("Spam score")
+    plt.ylabel("Count")
+    plt.title("Spam score distribution")
+    # add minor ticks to x axis in increments of 0.25
+    plt.minorticks_on()
+    plt.xticks(np.arange(0, 6.25, 0.25))
+    # rotate labels 90 degrees
+    plt.xticks(rotation=90)
+    plt.savefig(os.path.join(args.output, "histogram.png"))
+
 
     aucroc = roc_auc_score(is_spam, both_scores)
     statistics["AUCROC: "] = aucroc
@@ -69,8 +86,8 @@ def main(args):
     plt.legend()
     plt.savefig(os.path.join(args.output, "roc_curve.png"))
 
-    # list false positives and false negative rates for a range of thresholds from 2 to 6 in 0.1 increments
-    thresholds = np.array([2 + i * 0.1 for i in range(41)])
+    # list false positives and false negative rates for a range of thresholds from 0 to 6 in 0.1 increments
+    thresholds = np.array([0 + i * 0.1 for i in range(61)])
     fpr_list = []
     fnr_list = []
     accuracy = []
